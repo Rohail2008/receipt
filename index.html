@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manual Payment Receipt</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #4a90e2, #9013fe);
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      max-width: 600px;
+      width: 100%;
+    }
+
+    h2 {
+      text-align: center;
+      color: #222;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #4a90e2;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #357bd8;
+    }
+
+    .confirmation {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+      color: green;
+      display: none;
+    }
+
+    .error {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>🧾 Manual Payment Receipt</h2>
+
+    <div class="form-group">
+      <label for="customerName">Customer Name</label>
+      <input type="text" id="customerName" placeholder="e.g. John Doe" />
+    </div>
+
+    <div class="form-group">
+      <label for="amount">Amount Paid ($)</label>
+      <input type="number" id="amount" placeholder="e.g. 150.00" />
+    </div>
+
+    <div class="form-group">
+      <label for="date">Payment Date</label>
+      <input type="date" id="date" />
+    </div>
+
+    <div class="form-group">
+      <label for="method">Payment Method</label>
+      <select id="method">
+        <option value="">-- Select Method --</option>
+        <option value="Cash">Cash</option>
+        <option value="Card">Card</option>
+        <option value="Bank Transfer">Bank Transfer</option>
+        <option value="Cashapp">Cashapp</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+
+    <button onclick="submitReceipt()">Submit Receipt</button>
+
+    <div class="confirmation" id="confirmation">✅ Receipt saved to Google Sheet!</div>
+    <div class="error" id="errorMsg"></div>
+  </div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNikVQVzuFkf74HX0C_eAvrnXUpAQK1_EgN9tTv4TVxohlT3aO2MRsD_Q_0ooVhQpecg/exec";
+
+    window.onload = () => {
+      document.getElementById('date').valueAsDate = new Date(); // Set today's date
+    };
+
+    function submitReceipt() {
+      const name = document.getElementById("customerName").value.trim();
+      const amount = document.getElementById("amount").value.trim();
+      const date = document.getElementById("date").value;
+      const method = document.getElementById("method").value;
+      const errorMsg = document.getElementById("errorMsg");
+      const confirmation = document.getElementById("confirmation");
+
+      errorMsg.textContent = "";
+      confirmation.style.display = "none";
+
+      if (!name || !amount || !date || !method) {
+        errorMsg.textContent = "⚠️ Please fill in all fields.";
+        return;
+      }
+
+      const receiptID = 'RCPT-' + Math.floor(100000 + Math.random() * 900000);
+      const issuedOn = new Date().toLocaleString();
+
+      const data = {
+        id: receiptID,
+        name,
+        amount: parseFloat(amount).toFixed(2),
+        date: new Date(date).toDateString(),
+        method,
+        issuedOn
+      };
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
+      })
+      .then(res => res.text())
+      .then(msg => {
+        confirmation.style.display = "block";
+        alert("✅ Receipt saved to Google Sheet!\n\n" + msg);
+        clearForm();
+      })
+      .catch(err => {
+        errorMsg.textContent = "❌ Error saving receipt.";
+        console.error(err);
+      });
+    }
+
+    function clearForm() {
+      document.getElementById("customerName").value = "";
+      document.getElementById("amount").value = "";
+      document.getElementById("date").valueAsDate = new Date();
+      document.getElementById("method").value = "";
+    }
+  </script>
+</body>
+</html>
